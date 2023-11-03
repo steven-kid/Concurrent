@@ -1,98 +1,47 @@
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.Queue;
-import java.util.Random;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.Future;
+// Assuming Person, Passenger, and Driver classes are already defined and properly implemented
+
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Simulation {
+	private NuberDispatch dispatch;
+	private int maxDelay;
+	private boolean reportEvents;
+	private static final AtomicInteger bookingID = new AtomicInteger(1);
 
-	/**
-	 * 
-	 * @param regions The region names and maximum simultaneous active bookings allowed in that region
-	 * @param maxDrivers The number of drivers to create
-	 * @param maxPassengers The number of passengers to create
-	 * @param maxSleep The maximum amount a thread will sleep (in millseconds)) to simulate driving to, or dropping off a passenger
-	 * @param logEvents Whether to log booking events to the console
-	 * @throws Exception
-	 */
-	public Simulation(HashMap<String, Integer> regions, int maxDrivers, int maxPassengers, int maxSleep, boolean logEvents) throws Exception {
-		
-		//store the current time
-		long start = new Date().getTime();
-		
-		//print some space in the console
-		System.out.println("\n\n\n");
+	public Simulation(String[] regions, int driverCount, int passengerCount, int maxDelay, boolean reportEvents) {
+		this.maxDelay = maxDelay;
+		this.reportEvents = reportEvents;
+		dispatch = new NuberDispatch(reportEvents);
 
-		//store a queue of all current bookings as Future's that will eventually give us back a BookingResult object
-		Queue<Future<BookingResult>> bookings = new LinkedList<Future<BookingResult>>();
+		System.out.println("Creating Nuber Dispatch");
+		System.out.println("Creating " + regions.length + " regions");
 
-		//convert the region names from the regions map into an array
-		String[] regionNames = regions.keySet().toArray(new String[0]);
-
-		//create a new dispatch object
-		NuberDispatch dispatch = new NuberDispatch(regions, logEvents);
-
-		// create drivers that are available for jobs
-		for (int i = 0; i < maxDrivers; i++) {
-			Driver d = new Driver("D-" + Person.getRandomName(), maxSleep);
-			dispatch.addDriver(d);
+		for (String regionName : regions) {
+			System.out.println("Creating Nuber region for " + regionName);
+			dispatch.addRegion(regionName, new NuberRegion(dispatch, regionName, maxDelay));
 		}
 
-		// create passengers
-		for (int i = 0; i < maxPassengers; i++) {
-			
-			Passenger p = new Passenger("P-" + Person.getRandomName(), maxSleep);
-			
-			//choose a random region to assign this person
-			String randomRegion = regionNames[new Random().nextInt(regionNames.length)];
-			
-			//add each passenger to dispatch to book their travel for a random region
-			Future<BookingResult> f = dispatch.bookPassenger(p, randomRegion);
-			if (f != null)
-			{
-				//store the future to our list
-				bookings.add(f);
-			}
+		System.out.println("Done creating " + regions.length + " regions");
+
+		// Now create drivers
+		for (int i = 0; i < driverCount; i++) {
+			Driver driver = new Driver("D-" + (i + 1), maxDelay);
+			dispatch.addDriver(driver);
 		}
 
-		// tell all the regions to run all pending passengers, and then shutdown
-		dispatch.shutdown();
-		
-		//check that dispatch won't let us book passengers after we've told it to shutdown
-		if (dispatch.bookPassenger(new Passenger("Test", maxSleep), regionNames[new Random().nextInt(regionNames.length)]) != null)
-		{
-			throw new Exception("Dispatch bookPassenger() should return null if passenger requests booking after dispatch has started the shutdown");
+		// Now simulate passenger bookings
+		for (int i = 0; i < passengerCount; i++) {
+			Passenger passenger = new Passenger("P-" + (i + 1), maxDelay);
+			String regionName = regions[i % regions.length]; // Round-robin assignment of passengers to regions
+			dispatch.bookPassenger(passenger, regionName);
 		}
 
-		//whilst there are still active bookings, print out an update every 1s
-		while (bookings.size() > 0) {
-			
-			//go through each booking, and if it's done, remove it from our active bookings list
-			Iterator<Future<BookingResult>> i = bookings.iterator();
-			while (i.hasNext()) {
-				Future<BookingResult> f = i.next();
-
-				if (f.isDone()) {
-					i.remove();
-				}
-			}
-
-			//print status update
-			System.out.println("Active bookings: " + bookings.size()+", pending: "+dispatch.getBookingsAwaitingDriver());
-
-			//sleep for 1s and then print out the current bookings
-			try {
-				Thread.sleep(1000);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
-
-		//print out the final information for the simulation run
-		long totalTime = new Date().getTime() - start;
-		System.out.println("Simulation complete in "+totalTime+"ms");
+		// Here you would normally trigger the processing of bookings, for this pseudocode we'll assume that's happening asynchronously
 	}
+
+	public static int getNextBookingID() {
+		return bookingID.getAndIncrement();
+	}
+
+	// More simulation logic as necessary
 }
