@@ -59,7 +59,7 @@ public class Simulation {
 			}
 		}
 
-		// 每秒打印一次活跃预订数量
+		// print current bookings at every second
 		executorService.scheduleAtFixedRate(() -> {
 			Iterator<Future<BookingResult>> i = bookings.iterator();
 			while (i.hasNext()) {
