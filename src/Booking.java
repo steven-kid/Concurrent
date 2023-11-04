@@ -19,6 +19,7 @@ public class Booking implements Callable<BookingResult> {
 		this.passenger = passenger;
 		this.startTime = new Date();  // record start time
 		dispatch.logEvent(this, "Start booking, getting for driver");
+		dispatch.incrementBookingsAwaitingDrivers(); // Decrement counter once driver is assigned or booking failed
 	}
 
 	@Override
@@ -31,6 +32,7 @@ public class Booking implements Callable<BookingResult> {
 				driver = dispatch.getDriver();
 			}
 			dispatch.logEvent(this, "Starting, on way to passenger");
+			dispatch.decrementBookingsAwaitingDrivers(); // Decrement counter once driver is assigned or booking failed
 			driver.pickUpPassenger(passenger);
 			dispatch.logEvent(this, "Collected passenger, on way to destination");
 			driver.driveToDestination();

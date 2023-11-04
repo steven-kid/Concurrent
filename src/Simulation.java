@@ -84,7 +84,15 @@ public class Simulation {
 		executorService.shutdown();
 		try {
 			executorService.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-			System.out.println("Active bookings: " + bookings.size()+", pending: "+dispatch.getBookingsAwaitingDriver());
+			Iterator<Future<BookingResult>> i = bookings.iterator();
+			while (i.hasNext()) {
+				Future<BookingResult> f = i.next();
+
+				if (f.isDone()) {
+					i.remove();
+				}
+			}
+			System.out.println("Active bookings: " + bookings.size()+", pending: "+ dispatch.getBookingsAwaitingDriver());
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}

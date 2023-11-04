@@ -52,17 +52,15 @@ public class NuberRegion {
 
 		// Proceed with booking if a job slot is available
 		try {
-			dispatch.incrementBookingsAwaitingDrivers(); // Increment counter for awaiting drivers
 			Booking booking = new Booking(dispatch, waitingPassenger);
 			Future<BookingResult> result = executorService.submit(booking);
+//			dispatch.incrementBookingsAwaitingDrivers(); // Increment counter for awaiting drivers
 			return result;
 		} catch (Exception e) {
 			// Handle any other exceptions and release permit if failed to submit task
 			availableJobs.release();
 			dispatch.logEvent("Booking failed: " + e.getMessage());
 			return CompletableFuture.completedFuture(null);
-		} finally {
-			dispatch.decrementBookingsAwaitingDrivers(); // Decrement counter once driver is assigned or booking failed
 		}
 	}
 	
