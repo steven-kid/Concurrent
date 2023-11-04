@@ -3,7 +3,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Booking implements Callable<BookingResult> {
-	public static final AtomicInteger nextId = new AtomicInteger(1);
+	public static  AtomicInteger nextId = new AtomicInteger(1);
 
 	private final int bookingId;
 	private final NuberDispatch dispatch;

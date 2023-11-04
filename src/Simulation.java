@@ -4,8 +4,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Random;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 
 public class Simulation {
 
@@ -35,6 +34,8 @@ public class Simulation {
 		//create a new dispatch object
 		NuberDispatch dispatch = new NuberDispatch(regions, logEvents);
 
+		ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
+
 		// create drivers that are available for jobs
 		for (int i = 0; i < maxDrivers; i++) {
 			Driver d = new Driver("D-" + Person.getRandomName(), maxSleep);
@@ -58,19 +59,8 @@ public class Simulation {
 			}
 		}
 
-		// tell all the regions to run all pending passengers, and then shutdown
-		dispatch.shutdown();
-		
-		//check that dispatch won't let us book passengers after we've told it to shutdown
-		if (dispatch.bookPassenger(new Passenger("Test", maxSleep), regionNames[new Random().nextInt(regionNames.length)]) != null)
-		{
-			throw new Exception("Dispatch bookPassenger() should return null if passenger requests booking after dispatch has started the shutdown");
-		}
-
-		//whilst there are still active bookings, print out an update every 1s
-		while (bookings.size() > 0) {
-			
-			//go through each booking, and if it's done, remove it from our active bookings list
+		// 每秒打印一次活跃预订数量
+		executorService.scheduleAtFixedRate(() -> {
 			Iterator<Future<BookingResult>> i = bookings.iterator();
 			while (i.hasNext()) {
 				Future<BookingResult> f = i.next();
@@ -79,16 +69,24 @@ public class Simulation {
 					i.remove();
 				}
 			}
-
-			//print status update
 			System.out.println("Active bookings: " + bookings.size()+", pending: "+dispatch.getBookingsAwaitingDriver());
+		}, 0, 1, TimeUnit.SECONDS);
 
-			//sleep for 1s and then print out the current bookings
-			try {
-				Thread.sleep(1000);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
+		// tell all the regions to run all pending passengers, and then shutdown
+		dispatch.shutdown();
+
+		//check that dispatch won't let us book passengers after we've told it to shutdown
+		if (dispatch.bookPassenger(new Passenger("Test", maxSleep), regionNames[new Random().nextInt(regionNames.length)]) != null)
+		{
+			throw new Exception("Dispatch bookPassenger() should return null if passenger requests booking after dispatch has started the shutdown");
+		}
+
+		executorService.shutdown();
+		try {
+			executorService.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+			System.out.println("Active bookings: " + bookings.size()+", pending: "+dispatch.getBookingsAwaitingDriver());
+		} catch (InterruptedException e) {
+			e.printStackTrace();
 		}
 
 		//print out the final information for the simulation run

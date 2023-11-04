@@ -21,7 +21,7 @@ public class NuberDispatch {
 	private ConcurrentLinkedQueue<Driver> drivers;
 	private ConcurrentHashMap<String, NuberRegion> regions;
 
-	private final AtomicInteger bookingsAwaitingDrivers;
+	private static final AtomicInteger bookingsAwaitingDrivers = new AtomicInteger(0);
 
 	/**
 	 * Creates a new dispatch objects and instantiates the required regions and any other objects required.
@@ -35,7 +35,6 @@ public class NuberDispatch {
 		drivers = new ConcurrentLinkedQueue<>();
 		regions = new ConcurrentHashMap<>();
 		executorService = Executors.newCachedThreadPool(); // Handle bookings asynchronously
-		bookingsAwaitingDrivers = new AtomicInteger(0);
 		logEvent("Creating Nuber Dispatch");
 		logEvent("Creating " +  regionInfo.size() + " regions");
 		// Initialize regions based on the provided info
@@ -71,7 +70,6 @@ public class NuberDispatch {
 			logEvent("Booking rejected: Region not found");
 			return CompletableFuture.completedFuture(null); // return null or a completed future with a specific exception
 		}
-
 		return nuberRegion.bookPassenger(passenger);
 	}
 
@@ -99,7 +97,10 @@ public class NuberDispatch {
 	public void decrementBookingsAwaitingDrivers() {
 		bookingsAwaitingDrivers.decrementAndGet();
 	}
-	
+
+	public void reSetbookingsAwaitingDrivers(){
+		bookingsAwaitingDrivers.set(0);
+	}
 	/**
 	 * Tells all regions to finish existing bookings already allocated, and stop accepting new bookings
 	 */
