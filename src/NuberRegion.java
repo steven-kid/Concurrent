@@ -55,7 +55,6 @@ public class NuberRegion {
 			dispatch.logEvent(new Booking(dispatch, waitingPassenger), "Booking rejected - region is shutdown");
 			return CompletableFuture.completedFuture(null);
 		}
-		System.out.println("Starting booking, getting driver");
 		dispatch.incrementBookingsAwaitingDrivers(); // Increment counter for awaiting drivers
 
 		try {

@@ -23,11 +23,6 @@ public class NuberDispatch {
 
 	private final AtomicInteger bookingsAwaitingDrivers;
 
-	private final AtomicInteger bookingIdCounter = new AtomicInteger(0); // start with 0
-	private int generateJobId() {
-		return bookingIdCounter.incrementAndGet();
-	}
-
 	/**
 	 * Creates a new dispatch objects and instantiates the required regions and any other objects required.
 	 * It should be able to handle a variable number of regions based on the HashMap provided.
@@ -48,7 +43,7 @@ public class NuberDispatch {
 			regions.put(regionName, new NuberRegion(this, regionName, capacity));
 			logEvent("Creating Nuber region for " + regionName);
 		});
-		logEvent("Done creating" +  regionInfo.size() + " regions");
+		logEvent("Done creating " +  regionInfo.size() + " regions");
 	}
 
 	public boolean addDriver(Driver newDriver)
@@ -72,7 +67,7 @@ public class NuberDispatch {
 
 	public Future<BookingResult> bookPassenger(Passenger passenger, String region) {
 		if (executorService.isShutdown()) {
-			throw new IllegalStateException("Cannot book passengers after shutdown");
+			return null;
 		}
 
 		NuberRegion nuberRegion = regions.get(region);

@@ -5,10 +5,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class Booking implements Callable<BookingResult> {
 	private static final AtomicInteger nextId = new AtomicInteger(1);
 
-	public int getBookingId() {
-		return bookingId;
-	}
-
 	private final int bookingId;
 	private final NuberDispatch dispatch;
 	private final Passenger passenger;
@@ -17,11 +13,12 @@ public class Booking implements Callable<BookingResult> {
 
 	public Booking(NuberDispatch dispatch, Passenger passenger)
 	{
+		this.bookingId = nextId.getAndIncrement();  // ensure unique, sequential ID
+		dispatch.logEvent(this + "Create booking");
 		this.dispatch = dispatch;
 		this.passenger = passenger;
 		this.startTime = new Date();  // record start time
-		this.bookingId = nextId.getAndIncrement();  // ensure unique, sequential ID
-		dispatch.logEvent(this + "Create booking");
+		dispatch.logEvent(this + "Start booking, getting for driver");
 	}
 
 	@Override
@@ -33,10 +30,11 @@ public class Booking implements Callable<BookingResult> {
 				Thread.sleep(100);  // check for driver availability at intervals
 				driver = dispatch.getDriver();
 			}
-
+			dispatch.logEvent(this + "Starting, on way to passenger");
 			driver.pickUpPassenger(passenger);
+			dispatch.logEvent(this + "Collected passenger, on way to destination");
 			driver.driveToDestination();
-
+			dispatch.logEvent(this + "At destination, driver is now free");
 			// record end time and calculate duration
 			long tripDuration = new Date().getTime() - startTime.getTime();
 
@@ -57,6 +55,6 @@ public class Booking implements Callable<BookingResult> {
 	{
 		String driverName = (driver != null) ? driver.getName() : "null";
 		String passengerName = (passenger != null) ? passenger.getName() : "null";
-		return bookingId + ":" + driverName + ":" + passengerName;
+		return bookingId + ":" + driverName + ":" + passengerName + ":";
 	}
 }
