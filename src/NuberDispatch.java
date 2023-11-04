@@ -79,7 +79,7 @@ public class NuberDispatch {
 	 * @param booking The booking that's responsible for the event occurring
 	 * @param message The message to show
 	 */
-	public void logEvent(Booking booking, String message) {
+	public void logEvent(BookingResult booking, String message) {
 		
 		if (!logEvents) return;
 		
@@ -107,14 +107,14 @@ public class NuberDispatch {
 			NuberRegion nuberRegion = regions.get(region);
 			if (nuberRegion == null || !nuberRegion.canBook()) {
 				// Rejection handling logic goes here, for example:
-				logEvent(new Booking(-1, passenger, null, 0), "Booking rejected: Region not found or cannot accept new bookings");
+				logEvent(new BookingResult(-1, passenger, null, 0), "Booking rejected: Region not found or cannot accept new bookings");
 				return null; // return null or consider throwing a specific exception
 			}
 
 			Driver driver = getDriver(); // Attempt to get a driver for the booking
 			if (driver == null) {
 				// Handle case where no driver is available
-				logEvent(new Booking(-1, passenger, null, 0), "Booking rejected: No available driver");
+				logEvent(new BookingResult(-1, passenger, null, 0), "Booking rejected: No available driver");
 				return null; // return null or consider throwing a specific exception
 			}
 
@@ -126,7 +126,7 @@ public class NuberDispatch {
 			BookingResult bookingResult = new BookingResult(jobID, passenger, driver, tripDuration);
 
 			// Log the event
-			logEvent(new Booking(jobID, passenger, driver, tripDuration), "Booking successful");
+			logEvent(new BookingResult(jobID, passenger, driver, tripDuration), "Booking successful");
 
 			// Here you would likely have additional logic to actually process the booking
 

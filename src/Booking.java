@@ -22,6 +22,11 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class Booking implements Callable<BookingResult> {
 	private static final AtomicInteger nextId = new AtomicInteger(1);
+
+	public int getBookingId() {
+		return bookingId;
+	}
+
 	private final int bookingId;
 	private final NuberDispatch dispatch;
 	private final Passenger passenger;
