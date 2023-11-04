@@ -62,11 +62,10 @@ public class AssignmentDriver {
 		regions.put("North", 50);
 		regions.put("South", 50);
 		
-//		new Simulation(regions, 1, 10, 1000, logEvents);
+		new Simulation(regions, 1, 10, 1000, logEvents);
 //		new Simulation(regions, 5, 10, 1000, logEvents);
-		new Simulation(regions, 10, 10, 1000, true);
+		new Simulation(regions, 10, 10, 1000, logEvents);
 //		new Simulation(regions, 10, 100, 1000, logEvents);
-		//new Simulation(regions, 1, 50, 1000, logEvents);
+//		new Simulation(regions, 1, 50, 1000, logEvents);
 	}
-
 }

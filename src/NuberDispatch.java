@@ -76,9 +76,7 @@ public class NuberDispatch {
 	}
 
 	void logEvent(String message) {
-//		if(logEvents){
-			System.out.println(message);
-//		}
+		System.out.println(message);
 	}
 
 	public void logEvent(Booking booking, String message) {

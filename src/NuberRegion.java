@@ -3,17 +3,11 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class NuberRegion {
-	public static AtomicInteger nextId = new AtomicInteger(1);
 	private final NuberDispatch dispatch;
 	private final String regionName;
-	private final int maxSimultaneousJobs;
 	private final ExecutorService executorService;
 	private final Semaphore availableJobs;
 	private volatile boolean isShutdown = false;
-
-	public int getNextId() {
-		return nextId.getAndIncrement();
-	}
 
 	/**
 	 * Creates a new Nuber region
@@ -26,9 +20,9 @@ public class NuberRegion {
 	{
 		this.dispatch = dispatch;
 		this.regionName = regionName;
-		this.maxSimultaneousJobs = maxSimultaneousJobs;
 		this.executorService = Executors.newFixedThreadPool(maxSimultaneousJobs);
 		this.availableJobs = new Semaphore(maxSimultaneousJobs);
+		Booking.reSetNextId();
 	}
 	
 	/**
@@ -37,27 +31,38 @@ public class NuberRegion {
 	 * the booking should commence automatically. 
 	 * 
 	 * If the region has been told to shutdown, this function should return null, and log a message to the 
-	 * console that the booking was rejected.
+	 * console that the booking was
+	 * rejected.
 	 * 
 	 * @param waitingPassenger
 	 * @return a Future that will provide the final BookingResult object from the completed booking
 	 */
 	public Future<BookingResult> bookPassenger(Passenger waitingPassenger) {
 		if (isShutdown) {
+			dispatch.logEvent("Booking rejected: Region is shutdown");
 			return CompletableFuture.completedFuture(null);
 		}
-		dispatch.incrementBookingsAwaitingDrivers(); // Increment counter for awaiting drivers
 
+		// Check if there's an available job slot immediately
+		if (!availableJobs.tryAcquire()) {
+			// If no permits are available, reject the booking
+			dispatch.logEvent("Booking rejected: Maximum booking capacity reached");
+			return CompletableFuture.completedFuture(new BookingResult(-1, waitingPassenger, null, 0));
+		}
+
+		// Proceed with booking if a job slot is available
 		try {
-			availableJobs.acquire();  // Ensure we have an available job slot
+			dispatch.incrementBookingsAwaitingDrivers(); // Increment counter for awaiting drivers
 			Booking booking = new Booking(dispatch, waitingPassenger);
-
 			Future<BookingResult> result = executorService.submit(booking);
-			dispatch.decrementBookingsAwaitingDrivers(); // Decrement counter as we did get a driver
 			return result;
-		} catch (InterruptedException e) {
-			Thread.currentThread().interrupt();
+		} catch (Exception e) {
+			// Handle any other exceptions and release permit if failed to submit task
+			availableJobs.release();
+			dispatch.logEvent("Booking failed: " + e.getMessage());
 			return CompletableFuture.completedFuture(null);
+		} finally {
+			dispatch.decrementBookingsAwaitingDrivers(); // Decrement counter once driver is assigned or booking failed
 		}
 	}
 	

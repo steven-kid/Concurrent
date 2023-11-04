@@ -44,10 +44,13 @@ public class Booking implements Callable<BookingResult> {
 			// create and return booking result
 			return new BookingResult(bookingId, passenger, driver, tripDuration);
 		} catch (InterruptedException e) {
-			// handle interruption (e.g., cancellation)
 			Thread.currentThread().interrupt();
-			return null;  // or handle accordingly
+			return null;
 		}
+	}
+
+	public static void reSetNextId() {
+		Booking.nextId.set(1);
 	}
 
 	@Override
