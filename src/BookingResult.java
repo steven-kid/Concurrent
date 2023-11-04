@@ -1,5 +1,5 @@
 public class BookingResult {
-
+	private boolean success; // Add success field
 	public int jobID;
 	public Passenger passenger;
 	public Driver driver;
@@ -12,5 +12,14 @@ public class BookingResult {
 		this.driver = driver;
 		this.tripDuration = tripDuration;
 	}
-	
+	// Constructor for a failed booking
+	public BookingResult(boolean success) {
+		this.success = success;
+		// Initialize other fields to default values or leave them unset
+	}
+
+	// Getter for the success field
+	public boolean isSuccess() {
+		return success;
+	}
 }

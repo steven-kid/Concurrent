@@ -1,66 +1,108 @@
+import java.util.Date;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * 
+ * Booking represents the overall "job" for a passenger getting to their destination.
+ * 
+ * It begins with a passenger, and when the booking is commenced by the region 
+ * responsible for it, an available driver is allocated from dispatch. If no driver is 
+ * available, the booking must wait until one is. When the passenger arrives at the destination,
+ * a BookingResult object is provided with the overall information for the booking.
+ * 
+ * The Booking must track how long it takes, from the instant it is created, to when the 
+ * passenger arrives at their destination. This should be done using Date class' getTime().
+ * 
+ * Booking's should have a globally unique, sequential ID, allocated on their creation. 
+ * This should be multi-thread friendly, allowing bookings to be created from different threads.
+ * 
+ * @author james
+ *
+ */
 public class Booking implements Callable<BookingResult> {
-	private static final AtomicInteger idGenerator = new AtomicInteger(0);
-	private final int jobId;
-	private final Passenger passenger;
-	private final region;
+	private static final AtomicInteger nextId = new AtomicInteger(1);
+	private final int bookingId;
 	private final NuberDispatch dispatch;
-	private final boolean debug;
-
-	public Booking(NuberDispatch dispatch, nuber.students.NuberRegion region, Passenger passenger, boolean debug) {
-		this.jobId = idGenerator.incrementAndGet();
-		this.passenger = passenger;
+	private final Passenger passenger;
+	private final Date startTime;
+	private Driver driver;
+		
+	/**
+	 * Creates a new booking for a given Nuber dispatch and passenger, noting that no
+	 * driver is provided as it will depend on whether one is available when the region 
+	 * can begin processing this booking.
+	 * 
+	 * @param dispatch
+	 * @param passenger
+	 */
+	public Booking(NuberDispatch dispatch, Passenger passenger)
+	{
 		this.dispatch = dispatch;
-		this.debug = debug;
+		this.passenger = passenger;
+		this.startTime = new Date();  // record start time
+		this.bookingId = nextId.getAndIncrement();  // ensure unique, sequential ID
 	}
-
-	public int getJobId() {
-		return jobId;
-	}
-
-
+	
+	/**
+	 * At some point, the Nuber Region responsible for the booking can start it (has free spot),
+	 * and calls the Booking.call() function, which:
+	 * 1.	Asks Dispatch for an available driver
+	 * 2.	If no driver is currently available, the booking must wait until one is available. 
+	 * 3.	Once it has a driver, it must call the Driver.pickUpPassenger() function, with the 
+	 * 			thread pausing whilst as function is called.
+	 * 4.	It must then call the Driver.driveToDestination() function, with the thread pausing 
+	 * 			whilst as function is called.
+	 * 5.	Once at the destination, the time is recorded, so we know the total trip duration. 
+	 * 6.	The driver, now free, is added back into Dispatch�s list of available drivers. 
+	 * 7.	The call() function the returns a BookingResult object, passing in the appropriate 
+	 * 			information required in the BookingResult constructor.
+	 *
+	 * @return A BookingResult containing the final information about the booking 
+	 */
 	@Override
-	public BookingResult call() throws Exception {
-		// Additional logic for when no drivers are available
-		Driver driver = dispatch.provideDriver();
-		if (driver == null) {
-			// Output rejected booking if no driver available
-			if (debug) {
-				System.out.println(jobId + ":null:" + passenger.getName() + ": Rejected booking");
+	public BookingResult call() {
+		try {
+			driver = dispatch.getDriver(); // request a driver
+			while (driver == null) {  // wait for a driver to become available
+				Thread.sleep(100);  // check for driver availability at intervals
+				driver = dispatch.getDriver();
 			}
-			return new BookingResult(jobId, passenger, null, 0); // Assuming a constructor that takes these params
-		}
 
-		if (debug) {
-			System.out.println(jobId + ":null:" + passenger.getName() + ": Starting booking, getting driver");
-		}
-		driver.pickUpPassenger(passenger);
-		if (debug) {
-			System.out.println(jobId + ":" + driver.getName() + ":" + passenger.getName() + ": Starting, on way to passenger");
-		}
-		driver.driveToDestination();
-		if (debug) {
-			System.out.println(jobId + ":" + driver.getName() + ":" + passenger.getName() + ": Collected passenger, on way to destination");
-		}
-		// When the drive is complete
-		if (debug) {
-			System.out.println(jobId + ":" + driver.getName() + ":" + passenger.getName() + ": At destination, driver is now free");
-		}
+			driver.pickUpPassenger(passenger);
+			driver.driveToDestination();
 
-		// Now mark the driver as available again and process the next booking if any
-		dispatch.addDriver(driver);
-//		region.tryBooking();
+			// record end time and calculate duration
+			long tripDuration = new Date().getTime() - startTime.getTime();
 
-		// Assume travel time is stored somewhere, and we fetch it here
-		int travelTime = passenger.getTravelTime();
-		return new BookingResult(jobId, passenger, driver, travelTime);
-	}
+			// add driver back to dispatch's available drivers
+			dispatch.addDriver(driver);
 
-	private void debugMessage(String message) {
-		if (debug) {
-			System.out.println(message);
+			// create and return booking result
+			return new BookingResult(bookingId, passenger, driver, tripDuration);
+		} catch (InterruptedException e) {
+			// handle interruption (e.g., cancellation)
+			Thread.currentThread().interrupt();
+			return null;  // or handle accordingly
 		}
 	}
+	
+	/***
+	 * Should return the:
+	 * - booking ID, 
+	 * - followed by a colon, 
+	 * - followed by the driver's name (if the driver is null, it should show the word "null")
+	 * - followed by a colon, 
+	 * - followed by the passenger's name (if the passenger is null, it should show the word "null")
+	 * 
+	 * @return The compiled string
+	 */
+	@Override
+	public String toString()
+	{
+		String driverName = (driver != null) ? driver.getName() : "null";
+		String passengerName = (passenger != null) ? passenger.getName() : "null";
+		return bookingId + ":" + driverName + ":" + passengerName;
+	}
+
 }
