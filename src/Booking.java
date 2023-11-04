@@ -5,11 +5,11 @@ public class Booking implements Callable<BookingResult> {
 	private static final AtomicInteger idGenerator = new AtomicInteger(0);
 	private final int jobId;
 	private final Passenger passenger;
-	private final NuberRegion region;
+	private final region;
 	private final NuberDispatch dispatch;
 	private final boolean debug;
 
-	public Booking(NuberDispatch dispatch, NuberRegion region, Passenger passenger, boolean debug) {
+	public Booking(NuberDispatch dispatch, nuber.students.NuberRegion region, Passenger passenger, boolean debug) {
 		this.jobId = idGenerator.incrementAndGet();
 		this.passenger = passenger;
 		this.dispatch = dispatch;

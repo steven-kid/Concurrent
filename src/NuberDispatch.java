@@ -4,11 +4,10 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class NuberDispatch {
 	private boolean debug;
-	private Map<String, NuberRegion> regions;
+	private HashMap<String, Integer> regions;
 	private Queue<Driver> availableDrivers;
 
-	public NuberDispatch(HashMap<String, Integer> regionInfo, boolean debug)
-
+	public NuberDispatch(HashMap<String, Integer> regionInfo, boolean debug){
 		this.debug = debug;
 		this.regions = regionInfo;
 		this.availableDrivers = new ConcurrentLinkedQueue<>();
