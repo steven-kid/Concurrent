@@ -9,5 +9,4 @@ public class Passenger extends Person
 	{
 		return (int)(Math.random() * maxSleep);
 	}
-
 }

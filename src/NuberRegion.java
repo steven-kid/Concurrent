@@ -50,28 +50,25 @@ public class NuberRegion {
 	 * @param waitingPassenger
 	 * @return a Future that will provide the final BookingResult object from the completed booking
 	 */
-	public Future<BookingResult> bookPassenger(Passenger waitingPassenger)
-	{
+	public Future<BookingResult> bookPassenger(Passenger waitingPassenger) {
 		if (isShutdown) {
-//			dispatch.logEvent(new Booking(dispatch, waitingPassenger), "Booking rejected - region is shutdown");
+			dispatch.logEvent(new Booking(dispatch, waitingPassenger), "Booking rejected - region is shutdown");
 			return CompletableFuture.completedFuture(null);
 		}
-
+		System.out.println("Starting booking, getting driver");
 		dispatch.incrementBookingsAwaitingDrivers(); // Increment counter for awaiting drivers
 
 		try {
 			availableJobs.acquire();  // Ensure we have an available job slot
-			dispatch.decrementBookingsAwaitingDrivers(); // Decrement counter when driver is assigned
-			return executorService.submit(new Booking(dispatch, waitingPassenger));
+			Booking booking = new Booking(dispatch, waitingPassenger);
+			Future<BookingResult> result = executorService.submit(booking);
+			return result;
 		} catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
-			dispatch.decrementBookingsAwaitingDrivers(); // Decrement counter because booking didn't succeed
+			dispatch.decrementBookingsAwaitingDrivers(); // Decrement counter as we did not get a driver
+			dispatch.logEvent(new Booking(dispatch, waitingPassenger), "Booking interrupted - region is shutdown or thread interrupted");
 			return CompletableFuture.completedFuture(null);
 		}
-	}
-
-	public boolean canBook() {
-		return availableJobs.availablePermits() > 0;
 	}
 	
 	/**

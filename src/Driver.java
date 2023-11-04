@@ -15,6 +15,7 @@ public class Driver extends Person {
 	 */
 	public void pickUpPassenger(Passenger newPassenger) throws InterruptedException {
 		this.currentPassenger = newPassenger;
+		System.out.println(": Starting, on way to passenger");
 		Thread.sleep((long) (Math.random() * maxSleep));
 	}
 
