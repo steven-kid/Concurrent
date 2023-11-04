@@ -60,11 +60,6 @@ public class NuberDispatch {
 		return drivers.poll();
 	}
 
-	public void logEvent(Booking booking, String message) {
-		if (!logEvents) return;
-		System.out.println(booking + ": " + message);
-	}
-
 	public Future<BookingResult> bookPassenger(Passenger passenger, String region) {
 		if (executorService.isShutdown()) {
 			return null;
@@ -81,7 +76,15 @@ public class NuberDispatch {
 	}
 
 	void logEvent(String message) {
-		System.out.println(message);
+		if(logEvents){
+			System.out.println(message);
+		}
+	}
+
+	public void logEvent(Booking booking, String message) {
+		if(logEvents){
+			System.out.println(booking + ": " + message);
+		}
 	}
 
 	public int getBookingsAwaitingDriver()

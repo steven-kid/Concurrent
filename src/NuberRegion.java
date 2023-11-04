@@ -61,10 +61,10 @@ public class NuberRegion {
 			availableJobs.acquire();  // Ensure we have an available job slot
 			Booking booking = new Booking(dispatch, waitingPassenger);
 			Future<BookingResult> result = executorService.submit(booking);
+			dispatch.decrementBookingsAwaitingDrivers(); // Decrement counter as we did get a driver
 			return result;
 		} catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
-			dispatch.decrementBookingsAwaitingDrivers(); // Decrement counter as we did not get a driver
 			dispatch.logEvent(new Booking(dispatch, waitingPassenger), "Booking interrupted - region is shutdown or thread interrupted");
 			return CompletableFuture.completedFuture(null);
 		}
