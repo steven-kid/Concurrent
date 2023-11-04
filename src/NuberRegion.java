@@ -53,7 +53,7 @@ public class NuberRegion {
 	public Future<BookingResult> bookPassenger(Passenger waitingPassenger)
 	{
 		if (isShutdown) {
-			dispatch.logEvent(new Booking(dispatch, waitingPassenger), "Booking rejected - region is shutdown");
+//			dispatch.logEvent(new Booking(dispatch, waitingPassenger), "Booking rejected - region is shutdown");
 			return CompletableFuture.completedFuture(null);
 		}
 

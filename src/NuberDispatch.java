@@ -23,6 +23,11 @@ public class NuberDispatch {
 
 	private final AtomicInteger bookingsAwaitingDrivers;
 
+	private final AtomicInteger bookingIdCounter = new AtomicInteger(0); // start with 0
+	private int generateJobId() {
+		return bookingIdCounter.incrementAndGet();
+	}
+
 	/**
 	 * Creates a new dispatch objects and instantiates the required regions and any other objects required.
 	 * It should be able to handle a variable number of regions based on the HashMap provided.
