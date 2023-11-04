@@ -1,27 +1,19 @@
+import java.awt.print.Book;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
-/**
- * A single Nuber region that operates independently of other regions, other than getting 
- * drivers from bookings from the central dispatch.
- * 
- * A region has a maxSimultaneousJobs setting that defines the maximum number of bookings 
- * that can be active with a driver at any time. For passengers booked that exceed that 
- * active count, the booking is accepted, but must wait until a position is available, and 
- * a driver is available.
- * 
- * Bookings do NOT have to be completed in FIFO order.
- * 
- * @author james
- *
- */
 public class NuberRegion {
-
+	public static AtomicInteger nextId = new AtomicInteger(1);
 	private final NuberDispatch dispatch;
 	private final String regionName;
 	private final int maxSimultaneousJobs;
 	private final ExecutorService executorService;
 	private final Semaphore availableJobs;
 	private volatile boolean isShutdown = false;
+
+	public int getNextId() {
+		return nextId.getAndIncrement();
+	}
 
 	/**
 	 * Creates a new Nuber region
@@ -52,7 +44,6 @@ public class NuberRegion {
 	 */
 	public Future<BookingResult> bookPassenger(Passenger waitingPassenger) {
 		if (isShutdown) {
-			dispatch.logEvent(new Booking(dispatch, waitingPassenger), "Booking rejected - region is shutdown");
 			return CompletableFuture.completedFuture(null);
 		}
 		dispatch.incrementBookingsAwaitingDrivers(); // Increment counter for awaiting drivers
@@ -60,12 +51,12 @@ public class NuberRegion {
 		try {
 			availableJobs.acquire();  // Ensure we have an available job slot
 			Booking booking = new Booking(dispatch, waitingPassenger);
+
 			Future<BookingResult> result = executorService.submit(booking);
 			dispatch.decrementBookingsAwaitingDrivers(); // Decrement counter as we did get a driver
 			return result;
 		} catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
-			dispatch.logEvent(new Booking(dispatch, waitingPassenger), "Booking interrupted - region is shutdown or thread interrupted");
 			return CompletableFuture.completedFuture(null);
 		}
 	}

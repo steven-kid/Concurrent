@@ -3,7 +3,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Booking implements Callable<BookingResult> {
-	private static final AtomicInteger nextId = new AtomicInteger(1);
+	public static final AtomicInteger nextId = new AtomicInteger(1);
 
 	private final int bookingId;
 	private final NuberDispatch dispatch;
@@ -14,11 +14,11 @@ public class Booking implements Callable<BookingResult> {
 	public Booking(NuberDispatch dispatch, Passenger passenger)
 	{
 		this.bookingId = nextId.getAndIncrement();  // ensure unique, sequential ID
-		dispatch.logEvent(this + "Create booking");
+		dispatch.logEvent(this, "Create booking");
 		this.dispatch = dispatch;
 		this.passenger = passenger;
 		this.startTime = new Date();  // record start time
-		dispatch.logEvent(this + "Start booking, getting for driver");
+		dispatch.logEvent(this, "Start booking, getting for driver");
 	}
 
 	@Override
@@ -30,11 +30,11 @@ public class Booking implements Callable<BookingResult> {
 				Thread.sleep(100);  // check for driver availability at intervals
 				driver = dispatch.getDriver();
 			}
-			dispatch.logEvent(this + "Starting, on way to passenger");
+			dispatch.logEvent(this, "Starting, on way to passenger");
 			driver.pickUpPassenger(passenger);
-			dispatch.logEvent(this + "Collected passenger, on way to destination");
+			dispatch.logEvent(this, "Collected passenger, on way to destination");
 			driver.driveToDestination();
-			dispatch.logEvent(this + "At destination, driver is now free");
+			dispatch.logEvent(this, "At destination, driver is now free");
 			// record end time and calculate duration
 			long tripDuration = new Date().getTime() - startTime.getTime();
 
